@@ -50,12 +50,26 @@ let token = "";
 
 // LOGIN
 async function login() {
+
     const request = { scopes: ["Files.ReadWrite.All"] };
+
+    // Step 1: Login
     const loginResponse = await msalInstance.loginPopup(request);
-    const tokenResponse = await msalInstance.acquireTokenSilent(request);
+
+    // ⭐ IMPORTANT FIX — Set active account
+    msalInstance.setActiveAccount(loginResponse.account);
+
+    // Step 2: Get token
+    const tokenResponse = await msalInstance.acquireTokenSilent({
+        scopes: ["Files.ReadWrite.All"],
+        account: loginResponse.account
+    });
+
     token = tokenResponse.accessToken;
+
     document.getElementById("status").innerText = "✅ Logged in successfully";
 }
+
 
 // REFRESH SINGLE FILE
 async function refreshWorkbook(fileId) {
@@ -94,3 +108,4 @@ function startAuto() {
 
 </body>
 </html>
+
