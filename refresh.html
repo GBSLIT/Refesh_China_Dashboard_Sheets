@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excel Auto Refresh Dashboard</title>
+    <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+</head>
+
+<body style="font-family:Arial; text-align:center; margin-top:100px;">
+
+<h2>📊 Excel Auto Refresh Dashboard</h2>
+
+<button onclick="login()">Login Microsoft</button>
+<br><br>
+
+<button onclick="refreshAll()">Refresh All Workbooks</button>
+<br><br>
+
+<button onclick="startAuto()">Start Auto Refresh (1 min)</button>
+
+<p id="status"></p>
+
+<script>
+
+// 🔹 PUT YOUR VALUES HERE
+const clientId = "2921a8ff-a6e4-4e86-82e0-e1b90cf08e49";
+const tenantId = "93846c24-8666-4033-8b6e-901877a2cf98";
+
+const workbookIds = [
+    "016GCLEJCNXZABJXT7RJD3R6F34U4562P4",
+    "016GCLEJHQIKP7M2CQDRELAQHHYELG7ETM",
+    "016GCLEJEKPQQFGBMGXBC2SRVSRY6WVWNQ",
+    "016GCLEJCO77TCSMTM2FCZK6SX5CRZLOY7",
+    "016GCLEJH3AZSGCBB3PFCKN237KMGYFUES",
+    "016GCLEJH3AZSGCBB3PFCKN237KMGYFUES",
+    "016GCLEJDXV63H3X7CPFDYYOHQUKHV47CG"
+    "016GCLEJFR4AQVIARFGFEYU2HFAKJ6LFKW"
+];
+
+const msalConfig = {
+    auth: {
+        clientId: clientId,
+        authority: `https://login.microsoftonline.com/${tenantId}`,
+        redirectUri: window.location.href
+    }
+};
+
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+let token = "";
+
+// LOGIN
+async function login() {
+    const request = { scopes: ["Files.ReadWrite.All"] };
+    const loginResponse = await msalInstance.loginPopup(request);
+    const tokenResponse = await msalInstance.acquireTokenSilent(request);
+    token = tokenResponse.accessToken;
+    document.getElementById("status").innerText = "✅ Logged in successfully";
+}
+
+// REFRESH SINGLE FILE
+async function refreshWorkbook(fileId) {
+    const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/application/calculate`;
+
+    await fetch(url, {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ calculationType: "Full" })
+    });
+}
+
+// REFRESH ALL FILES
+async function refreshAll() {
+
+    document.getElementById("status").innerText = "🔄 Refreshing...";
+
+    for (let id of workbookIds) {
+        await refreshWorkbook(id);
+    }
+
+    document.getElementById("status").innerText =
+        "✅ All workbooks refreshed at " + new Date().toLocaleTimeString();
+}
+
+// AUTO REFRESH
+function startAuto() {
+    setInterval(refreshAll, 60000);
+    document.getElementById("status").innerText = "⏱ Auto refresh started";
+}
+
+</script>
+
+</body>
+</html>
